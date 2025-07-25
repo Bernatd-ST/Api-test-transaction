@@ -172,16 +172,16 @@ const getHistory = async (req, res) => {
     let limit = 10;
     let offset = 0;
     
-    // Validasi parameter query
-    if (req.query.limit && !isNaN(req.query.limit)) {
-      limit = parseInt(req.query.limit);
-    }
-    
-    if (req.query.offset && !isNaN(req.query.offset)) {
-      offset = parseInt(req.query.offset);
-    }
-    
     try {
+      // Validasi parameter query
+      if (req.query.limit && !isNaN(req.query.limit)) {
+        limit = parseInt(req.query.limit);
+      }
+      
+      if (req.query.offset && !isNaN(req.query.offset)) {
+        offset = parseInt(req.query.offset);
+      }
+      
       // Get user ID first
       const [users] = await pool.execute('SELECT id FROM users WHERE email = ?', [email]);
       
@@ -191,8 +191,9 @@ const getHistory = async (req, res) => {
       
       const userId = users[0].id;
       
-      // Get transaction history
-      const [rawTransactions] = await pool.execute(
+      // Get transaction history dengan query yang lebih sederhana
+      // Menghindari DATE_FORMAT yang mungkin tidak didukung
+      const [transactions] = await pool.execute(
         `SELECT 
            t.id, 
            t.invoice_number, 
@@ -200,7 +201,7 @@ const getHistory = async (req, res) => {
            t.service_code, 
            t.total_amount, 
            t.description, 
-           DATE_FORMAT(t.created_on, '%Y-%m-%d %H:%i:%S') as created_on,
+           t.created_on,
            s.service_name, 
            s.service_icon 
          FROM transactions t
@@ -211,19 +212,27 @@ const getHistory = async (req, res) => {
         [userId, limit, offset]
       );
       
-      // Format hasil untuk menangani NULL pada service_name dan service_icon
-      const transactions = rawTransactions.map(t => ({
-        invoice_number: t.invoice_number,
-        transaction_type: t.transaction_type,
-        service_code: t.service_code || null,
-        service_name: t.service_name || null,
-        service_icon: t.service_icon || null,
-        total_amount: t.total_amount,
-        description: t.description,
-        created_on: t.created_on
-      }));
+      // Format hasil untuk menangani NULL dan konversi tanggal
+      const formattedTransactions = transactions.map(t => {
+        // Format tanggal sendiri menggunakan JavaScript
+        let createdOn = t.created_on;
+        if (createdOn instanceof Date) {
+          createdOn = createdOn.toISOString().replace('T', ' ').substring(0, 19);
+        }
+        
+        return {
+          invoice_number: t.invoice_number,
+          transaction_type: t.transaction_type,
+          service_code: t.service_code || null,
+          service_name: t.service_name || null,
+          service_icon: t.service_icon || null,
+          total_amount: t.total_amount,
+          description: t.description,
+          created_on: createdOn
+        };
+      });
       
-      return successResponse(res, 'Sukses', { records: transactions });
+      return successResponse(res, 'Sukses', { records: formattedTransactions });
     } catch (error) {
       console.error('Get history error:', error);
       return errorResponse(res, 500, 'Terjadi kesalahan pada server');
