@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { testConnection } = require('./config/database');
+const setupDatabase = require('./setup-db');
 
 
 
@@ -22,6 +23,15 @@ app.use(transactionRoutes);
 
 // test database connection
 testConnection();
+
+// setup database tables if they don't exist
+const runningInProduction = process.env.NODE_ENV === 'production';
+if (runningInProduction) {
+  console.log('Running in production environment, setting up database...');
+  setupDatabase()
+    .then(() => console.log('Database setup completed successfully!'))
+    .catch(err => console.error('Database setup failed:', err));
+}
 
 // Default route
 app.get('/', (req, res) => {
