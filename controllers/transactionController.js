@@ -33,7 +33,6 @@ const getBalance = async (req, res) => {
 // topup balance 
 const topup = async (req, res) => {
     const { email } = req;
-    // Pastikan amount selalu number dan positif
     const amount = parseInt(req.body.amount);
 
     if (isNaN(amount) || amount <= 0) {
@@ -53,14 +52,11 @@ const topup = async (req, res) => {
         const connection = await pool.getConnection();
         await connection.beginTransaction();
         try {
-            // Cek user sudah punya record balance
             const [balanceCheck] = await connection.execute('SELECT id FROM balances WHERE user_id = ?', [userId]);
             
             if (balanceCheck.length === 0) {
-                // Jika belum ada record, buat baru
                 await connection.execute('INSERT INTO balances (user_id, balance) VALUES (?, ?)', [userId, amount]);
             } else {
-                // Update balance yang ada
                 await connection.execute('UPDATE balances SET balance = balance + ? WHERE user_id = ?', [amount, userId]);
             }
 
@@ -187,7 +183,6 @@ const getHistory = async (req, res) => {
       const userId = users[0].id;
       console.log('User ID found:', userId);
       
-      // Paling sederhana, tanpa parameter limit/offset untuk menghindari masalah tipe data
       console.log('Executing simplified transaction query...');
       const query = `
         SELECT 
@@ -207,11 +202,9 @@ const getHistory = async (req, res) => {
       console.log('Query:', query);
       console.log('Query params:', [userId]);
       
-      // Gunakan satu parameter saja untuk menghindari masalah tipe data
       const [transactions] = await pool.execute(query, [userId]);
       console.log('Query success, result count:', transactions.length);
       
-      // Format sederhana untuk response
       const formattedTransactions = transactions.map(t => {
         return {
           invoice_number: t.invoice_number,

@@ -145,7 +145,6 @@ const updateProfileImage = async (req, res) => {
       [email]
     );
 
-    // If there's an existing profile image, delete it
     if (users[0].profile_image) {
       const oldImagePath = users[0].profile_image.replace(baseUrl, '').trim();
       if (fs.existsSync(`.${oldImagePath}`)) {
