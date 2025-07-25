@@ -155,8 +155,17 @@ const createTransaction = async (req, res) => {
 // Get transaction history
 const getHistory = async (req, res) => {
     const { email } = req;
-    const limit = req.query.limit || 10;
-    const offset = req.query.offset || 0;
+    let limit = 10;
+    let offset = 0;
+    
+    // Validasi parameter query
+    if (req.query.limit && !isNaN(req.query.limit)) {
+      limit = parseInt(req.query.limit);
+    }
+    
+    if (req.query.offset && !isNaN(req.query.offset)) {
+      offset = parseInt(req.query.offset);
+    }
     
     try {
       // Get user ID first
@@ -169,18 +178,38 @@ const getHistory = async (req, res) => {
       const userId = users[0].id;
       
       // Get transaction history
-      const [transactions] = await pool.execute(
-        `SELECT t.id, t.transaction_type, t.total_amount, t.description, t.created_on, 
-                s.service_name, s.service_icon 
+      const [rawTransactions] = await pool.execute(
+        `SELECT 
+           t.id, 
+           t.invoice_number, 
+           t.transaction_type, 
+           t.service_code, 
+           t.total_amount, 
+           t.description, 
+           DATE_FORMAT(t.created_on, '%Y-%m-%d %H:%i:%S') as created_on,
+           s.service_name, 
+           s.service_icon 
          FROM transactions t
          LEFT JOIN services s ON t.service_code = s.service_code
          WHERE t.user_id = ?
          ORDER BY t.created_on DESC
          LIMIT ? OFFSET ?`,
-        [userId, parseInt(limit), parseInt(offset)]
+        [userId, limit, offset]
       );
       
-      return successResponse(res, 'Sukses', { transactions });
+      // Format hasil untuk menangani NULL pada service_name dan service_icon
+      const transactions = rawTransactions.map(t => ({
+        invoice_number: t.invoice_number,
+        transaction_type: t.transaction_type,
+        service_code: t.service_code || null,
+        service_name: t.service_name || null,
+        service_icon: t.service_icon || null,
+        total_amount: t.total_amount,
+        description: t.description,
+        created_on: t.created_on
+      }));
+      
+      return successResponse(res, 'Sukses', { records: transactions });
     } catch (error) {
       console.error('Get history error:', error);
       return errorResponse(res, 500, 'Terjadi kesalahan pada server');
