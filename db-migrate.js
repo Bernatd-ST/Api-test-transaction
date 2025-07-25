@@ -5,40 +5,34 @@ require('dotenv').config();
 
 // Fungsi untuk menjalankan migrasi database
 async function migrate() {
-  console.log('Starting database migration with privileges fix...');
+  console.log('Starting database migration...');
   
+  // Menggunakan kredensial hardcode Railway yang diketahui berfungsi
+  // Dari connection string: mysql://root:RoAAuIoCWkqiirhHMefCNnFgtEDIPxyD@yamabiko.proxy.rlwy.net:16584/railway
   const dbConfig = {
-    host: 'gondola.proxy.rlwy.net', // Hostname publik Railway
+    host: 'yamabiko.proxy.rlwy.net', // Hostname publik Railway
     user: 'root',
-    password: 'GpAhnIwcCeGylFIUXQVtTTtmEUyGOxKn',
+    password: 'RoAAuIoCWkqiirhHMefCNnFgtEDIPxyD',
     database: 'railway',
-    port: 36527 // Port publik Railway
+    port: 16584 // Port publik Railway
   };
   
-
+  // Tampilkan informasi koneksi
   console.log(`Connecting to MySQL: ${dbConfig.host}:${dbConfig.port} as ${dbConfig.user}`);
   
   let connection;
+  
   try {
+    // Baca file SQL
     console.log('Reading SQL file...');
     let sqlContent = fs.readFileSync(path.join(__dirname, 'db.sql'), 'utf8');
     
+    // Modifikasi SQL untuk menggunakan database 'railway' alih-alih 'nutech_api_test'
     sqlContent = sqlContent
       .replace('CREATE DATABASE IF NOT EXISTS nutech_api_test;', '')
       .replace('USE nutech_api_test;', 'USE railway;');
     
-    // Force DROP dan recreate tables
-    const dropTablesSQL = `
-      DROP TABLE IF EXISTS transactions;
-      DROP TABLE IF EXISTS balances;
-      DROP TABLE IF EXISTS users;
-      DROP TABLE IF EXISTS services;
-      DROP TABLE IF EXISTS banners;
-    `;
-    
-    sqlContent = dropTablesSQL + sqlContent;
-    
-    console.log('SQL modified to use railway database with force drop tables');
+    console.log('SQL modified to use railway database');
     
     // Koneksi ke MySQL
     connection = await mysql.createConnection({
@@ -47,34 +41,27 @@ async function migrate() {
       password: dbConfig.password,
       port: dbConfig.port,
       database: dbConfig.database,
-      multipleStatements: true 
+      multipleStatements: true // Penting untuk menjalankan beberapa query sekaligus
     });
     
     console.log('Connected to MySQL. Running SQL script...');
     
-    await connection.query('FLUSH PRIVILEGES');
-    console.log('Privileges flushed');
+    // Eksekusi script SQL
+    const [results] = await connection.query(sqlContent);
     
-    await connection.query(sqlContent);
     console.log('Migration completed successfully!');
-    
-    const [tables] = await connection.query('SHOW TABLES');
     console.log('Tables created:');
+    
+    // Tampilkan tabel yang dibuat
+    const [tables] = await connection.query('SHOW TABLES');
     tables.forEach(table => {
-      const tableName = table[`Tables_in_${dbConfig.database}`];
+      const tableName = Object.values(table)[0];
       console.log(`- ${tableName}`);
     });
-
-    console.log('\nVerifying data:');
-    
-    const [services] = await connection.query('SELECT COUNT(*) as count FROM services');
-    console.log(`Services count: ${services[0].count}`);
-    
-    const [banners] = await connection.query('SELECT COUNT(*) as count FROM banners');
-    console.log(`Banners count: ${banners[0].count}`);
     
   } catch (error) {
-    console.error('Migration failed:', error);
+    console.error('Migration failed:', error.message);
+    process.exit(1);
   } finally {
     if (connection) {
       await connection.end();
@@ -83,4 +70,5 @@ async function migrate() {
   }
 }
 
+// Jalankan migrasi
 migrate();

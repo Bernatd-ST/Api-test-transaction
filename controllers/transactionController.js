@@ -170,23 +170,10 @@ const createTransaction = async (req, res) => {
 const getHistory = async (req, res) => {
     console.log('Transaction History endpoint called');
     const { email } = req;
-    let limit = 10;
-    let offset = 0;
     
     try {
       // Log input parameters
-      console.log('Request params:', { email, query: req.query });
-
-      // Validasi parameter query
-      if (req.query.limit && !isNaN(req.query.limit)) {
-        limit = parseInt(req.query.limit);
-      }
-      
-      if (req.query.offset && !isNaN(req.query.offset)) {
-        offset = parseInt(req.query.offset);
-      }
-      
-      console.log('Parsed params:', { limit, offset });
+      console.log('Request params:', { email });
       
       // Get user ID first
       console.log('Getting user ID...');
@@ -200,46 +187,38 @@ const getHistory = async (req, res) => {
       const userId = users[0].id;
       console.log('User ID found:', userId);
       
-      // Simplified debugging query - just get transactions without join first
-      console.log('Getting transaction count...');
-      const [countResult] = await pool.execute('SELECT COUNT(*) as count FROM transactions WHERE user_id = ?', [userId]);
-      console.log('Transaction count:', countResult[0].count);
-      
-      // Full query with necessary fields only
-      console.log('Executing main transaction query...');
+      // Paling sederhana, tanpa parameter limit/offset untuk menghindari masalah tipe data
+      console.log('Executing simplified transaction query...');
       const query = `
         SELECT 
-          t.invoice_number, 
-          t.transaction_type, 
-          t.total_amount, 
-          t.description,
-          t.created_on
+          invoice_number, 
+          transaction_type, 
+          total_amount, 
+          description,
+          created_on
         FROM 
-          transactions t 
+          transactions 
         WHERE 
-          t.user_id = ? 
+          user_id = ? 
         ORDER BY 
-          t.created_on DESC 
-        LIMIT ? OFFSET ?`;
+          created_on DESC 
+        LIMIT 10`;
       
       console.log('Query:', query);
-      console.log('Query params:', [userId, limit, offset]);
+      console.log('Query params:', [userId]);
       
-      const [transactions] = await pool.execute(query, [userId, limit, offset]);
+      // Gunakan satu parameter saja untuk menghindari masalah tipe data
+      const [transactions] = await pool.execute(query, [userId]);
       console.log('Query success, result count:', transactions.length);
       
-      // Simplified response - no joins or complex formatting for now
-      // Just return basic transaction data
+      // Format sederhana untuk response
       const formattedTransactions = transactions.map(t => {
-        console.log('Processing transaction:', t.invoice_number);
         return {
           invoice_number: t.invoice_number,
           transaction_type: t.transaction_type,
           total_amount: t.total_amount,
           description: t.description,
-          created_on: t.created_on instanceof Date 
-            ? t.created_on.toISOString() 
-            : String(t.created_on)
+          created_on: String(t.created_on)
         };
       });
       
