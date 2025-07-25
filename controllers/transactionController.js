@@ -33,7 +33,12 @@ const getBalance = async (req, res) => {
 // topup balance 
 const topup = async (req, res) => {
     const { email } = req;
-    const { amount } = req.body;
+    // Pastikan amount selalu number dan positif
+    const amount = parseInt(req.body.amount);
+
+    if (isNaN(amount) || amount <= 0) {
+        return errorResponse(res, 102, 'Amount harus berupa angka positif');
+    }
 
     try {
         // get user ID first 
@@ -48,14 +53,23 @@ const topup = async (req, res) => {
         const connection = await pool.getConnection();
         await connection.beginTransaction();
         try {
-            // update balance 
-            await connection.execute('UPDATE balances SET balance = balance + ? WHERE user_id = ?', [amount, userId]);
+            // Cek user sudah punya record balance
+            const [balanceCheck] = await connection.execute('SELECT id FROM balances WHERE user_id = ?', [userId]);
+            
+            if (balanceCheck.length === 0) {
+                // Jika belum ada record, buat baru
+                await connection.execute('INSERT INTO balances (user_id, balance) VALUES (?, ?)', [userId, amount]);
+            } else {
+                // Update balance yang ada
+                await connection.execute('UPDATE balances SET balance = balance + ? WHERE user_id = ?', [amount, userId]);
+            }
 
             // Generate invoice number
             const invoiceNumber = `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
             
             // create transaction record
-            await connection.execute('INSERT INTO transactions (user_id, invoice_number, transaction_type, total_amount, description, created_on) VALUES (?, ?, ?, ?, ?, NOW())', [userId, invoiceNumber, 'TOPUP', amount, 'Top Up Saldo']);
+            await connection.execute('INSERT INTO transactions (user_id, invoice_number, transaction_type, total_amount, description, created_on) VALUES (?, ?, ?, ?, ?, NOW())', 
+                [userId, invoiceNumber, 'TOPUP', amount, 'Top Up Saldo']);
 
             await connection.commit();
 
