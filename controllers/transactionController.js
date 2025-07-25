@@ -168,11 +168,15 @@ const createTransaction = async (req, res) => {
 
 // Get transaction history
 const getHistory = async (req, res) => {
+    console.log('Transaction History endpoint called');
     const { email } = req;
     let limit = 10;
     let offset = 0;
     
     try {
+      // Log input parameters
+      console.log('Request params:', { email, query: req.query });
+
       // Validasi parameter query
       if (req.query.limit && !isNaN(req.query.limit)) {
         limit = parseInt(req.query.limit);
@@ -182,60 +186,69 @@ const getHistory = async (req, res) => {
         offset = parseInt(req.query.offset);
       }
       
+      console.log('Parsed params:', { limit, offset });
+      
       // Get user ID first
+      console.log('Getting user ID...');
       const [users] = await pool.execute('SELECT id FROM users WHERE email = ?', [email]);
+      console.log('Users query result:', users);
       
       if (users.length === 0) {
         return errorResponse(res, 108, 'Token tidak valid atau kadaluwarsa');
       }
       
       const userId = users[0].id;
+      console.log('User ID found:', userId);
       
-      // Get transaction history dengan query yang lebih sederhana
-      // Menghindari DATE_FORMAT yang mungkin tidak didukung
-      const [transactions] = await pool.execute(
-        `SELECT 
-           t.id, 
-           t.invoice_number, 
-           t.transaction_type, 
-           t.service_code, 
-           t.total_amount, 
-           t.description, 
-           t.created_on,
-           s.service_name, 
-           s.service_icon 
-         FROM transactions t
-         LEFT JOIN services s ON t.service_code = s.service_code
-         WHERE t.user_id = ?
-         ORDER BY t.created_on DESC
-         LIMIT ? OFFSET ?`,
-        [userId, limit, offset]
-      );
+      // Simplified debugging query - just get transactions without join first
+      console.log('Getting transaction count...');
+      const [countResult] = await pool.execute('SELECT COUNT(*) as count FROM transactions WHERE user_id = ?', [userId]);
+      console.log('Transaction count:', countResult[0].count);
       
-      // Format hasil untuk menangani NULL dan konversi tanggal
+      // Full query with necessary fields only
+      console.log('Executing main transaction query...');
+      const query = `
+        SELECT 
+          t.invoice_number, 
+          t.transaction_type, 
+          t.total_amount, 
+          t.description,
+          t.created_on
+        FROM 
+          transactions t 
+        WHERE 
+          t.user_id = ? 
+        ORDER BY 
+          t.created_on DESC 
+        LIMIT ? OFFSET ?`;
+      
+      console.log('Query:', query);
+      console.log('Query params:', [userId, limit, offset]);
+      
+      const [transactions] = await pool.execute(query, [userId, limit, offset]);
+      console.log('Query success, result count:', transactions.length);
+      
+      // Simplified response - no joins or complex formatting for now
+      // Just return basic transaction data
       const formattedTransactions = transactions.map(t => {
-        // Format tanggal sendiri menggunakan JavaScript
-        let createdOn = t.created_on;
-        if (createdOn instanceof Date) {
-          createdOn = createdOn.toISOString().replace('T', ' ').substring(0, 19);
-        }
-        
+        console.log('Processing transaction:', t.invoice_number);
         return {
           invoice_number: t.invoice_number,
           transaction_type: t.transaction_type,
-          service_code: t.service_code || null,
-          service_name: t.service_name || null,
-          service_icon: t.service_icon || null,
           total_amount: t.total_amount,
           description: t.description,
-          created_on: createdOn
+          created_on: t.created_on instanceof Date 
+            ? t.created_on.toISOString() 
+            : String(t.created_on)
         };
       });
       
+      console.log('Successfully formatted transactions');
       return successResponse(res, 'Sukses', { records: formattedTransactions });
     } catch (error) {
-      console.error('Get history error:', error);
-      return errorResponse(res, 500, 'Terjadi kesalahan pada server');
+      console.error('Get history error details:', error.message);
+      console.error('Error stack:', error.stack);
+      return errorResponse(res, 500, 'Terjadi kesalahan pada server: ' + error.message);
     }
 };
 
