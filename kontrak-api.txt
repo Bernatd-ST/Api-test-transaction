@@ -1,0 +1,677 @@
+Kontrak api sweager
+
+Berikut rincian nya :   
+1. Module Membership
+•	/registration ( POST)
+	   API Registration Public (Tidak perlu Token untuk      	
+	   mengaksesnya)
+	   Digunakan untuk melakukan registrasi User agar bisa Login  
+               kedalam aplikasi
+           Ketentuan :
+1.	Parameter request email harus terdapat validasi format email
+2.	Parameter request password Length minimal 8 karakter
+3.	Handling Response sesuai dokumentasi Response dibawah
+
+Contoh : 
+Request body : 
+{
+  "email": "user@nutech-integrasi.com",
+  "first_name": "User",
+  "last_name": "Nutech",
+  "password": "abcdef1234"
+}
+Response :
+Curl :
+curl -X 'POST' \
+  'https://take-home-test-api.nutech-integrasi.com/registration' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "email": "user@nutech-integrasi.com",
+  "first_name": "User",
+  "last_name": "Nutech",
+  "password": "abcdef1234"
+}'
+
+Request URL : https://take-home-test-api.nutech-integrasi.com/registration
+
+Server response : 
+Code : 400 
+Details : Error response status is 400
+Response body : {
+  "status": 102,
+  "message": "Email sudah terdaftar",
+  "data": null
+}
+Response headers :  content-length: 60 
+ content-type: application/json; charset=utf-8 
+
+
+
+Server response : 
+Code : 200
+Detail : Request Successfully
+Media type : application/json
+Response body : {
+  "status": 0,
+  "message": "Registrasi berhasil silahkan login",
+  "data": null
+}
+
+Server response :
+Code : 400
+Detail : Bad Request
+Media type : application/json
+Response body : {
+  "status": 102,
+  "message": "Paramter email tidak sesuai format",
+  "data": null
+}
+•	/login (POST)
+API Login Public (Tidak perlu Token untuk mengaksesnya)
+Digunakan untuk melakukan login dan mendapatkan authentication berupa JWT (Json Web Token)
+Ketentuan :
+1.	Parameter request email harus terdapat validasi format email
+2.	Parameter request password Length minimal 8 karakter
+3.	JWT yang digenerate harus memuat payload email dan di set expiration selama 12 jam dari waktu di generate
+4.	Handling Response sesuai dokumentasi Response dibawah
+
+
+
+Request URL : https://take-home-test-api.nutech-integrasi.com/login
+Request Body : {
+  "email": "user@nutech-integrasi.com",
+  "password": "abcdef1234"
+}
+curl -X 'POST' \
+  'https://take-home-test-api.nutech-integrasi.com/login' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "email": "user@nutech-integrasi.com",
+  "password": "abcdef1234"
+}'
+
+Response :
+Code : 200
+Description : Berhasil Login
+Media type : application/json
+Respon body : {
+  "status": 0,
+  "message": "Login Sukses",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InVzZXJAbnV0ZWNoLWludGVncmFzaS5jb20iLCJtZW1iZXJDb2RlIjoiTExLUjZKTDEiLCJpYXQiOjE3NTMyNzk5NDcsImV4cCI6MTc1MzMyMzE0N30.o27aCaOhUJnH6vZtgV_8QobhtK8Ft5mLPyBQ10bLxVw"
+  }
+}
+
+Response headers : content-length: 265   content-type: application/json; charset=utf-8
+
+Code : 400
+Description : Bad Request
+Media type : application.json
+Respon Body : {
+  	"status": 102,
+  	"message": "Paramter email tidak sesuai format",
+  	"data": null
+}
+
+Code : 401 
+Description : Unauthorized
+Media Type : application/json
+Respon body : {
+  "status": 103,
+  "message": "Username atau password salah",
+  "data": null
+}
+
+
+
+
+•	/profile (GET)
+
+API Profile Private (memerlukan Token untuk mengaksesnya)
+Digunakan untuk mendapatkan informasi profile User
+Ketentuan :
+1.	Service ini harus menggunakan Bearer Token JWT untuk mengaksesnya
+2.	Tidak ada parameter email di query param url ataupun request body, parameter email diambil dari payload JWT yang didapatkan dari hasil login
+3.	Handling Response sesuai dokumentasi Response dibawah
+
+
+Request URL : https://take-home-test-api.nutech-integrasi.com/profile
+Code : 200
+Description : Request Successfully
+Media type : application/json
+Respon body : {
+  "status": 0,
+  "message": "Sukses",
+  "data": {
+    "email": "user@nutech-integrasi.com",
+    "first_name": "User",
+    "last_name": "Nutech",
+    "profile_image": "https://yoururlapi.com/profile.jpeg"
+     }
+               }
+
+Code : 401
+Description : Unauthorized
+Media type : application/json
+Respon Body : {
+  "status": 108,
+  "message": "Token tidak tidak valid atau kadaluwarsa",
+  "data": null
+              }
+
+
+•	/profile/update (PUT)
+
+API Update Profile Private (memerlukan Token untuk mengaksesnya)
+Digunakan untuk mengupdate data profile User
+Ketentuan :
+1.	Service ini harus menggunakan Bearer Token JWT untuk mengaksesnya
+2.	Tidak ada parameter email di query param url ataupun request body, parameter email diambil dari payload JWT yang didapatkan dari hasil login
+3.	Handling Response sesuai dokumentasi Response dibawah
+
+Request URL : https://take-home-test-api.nutech-integrasi.com/profile/update
+Code : 401 
+Description : Error Response status is 401 
+Media type : application/json
+Request Body : {
+  "first_name": "User Edited",
+  "last_name": "Nutech Edited"
+}
+  Response Body : {
+  "status": 108,
+  "message": "Token tidak tidak valid atau kadaluwarsa",
+  "data": null
+}
+Respon headers : content-length: 79   content-type: application/json; charset=utf-8
+
+
+Code : 200
+Description : Request Successfully
+Media type : application/json
+Request body : {
+  "first_name": "User Edited",
+  "last_name": "Nutech Edited"
+}
+
+  Respon body : {
+  "status": 0,
+  "message": "Update Pofile berhasil",
+  "data": {
+    "email": "user@nutech-integrasi.com",
+    "first_name": "User Edited",
+    "last_name": "Nutech Edited",
+    "profile_image": "https://yoururlapi.com/profile.jpeg"
+  }
+}
+
+
+•	/profile/image (PUT)
+API Upload Profile Image Private (memerlukan Token untuk mengaksesnya)
+Digunakan untuk mengupdate / upload profile image User
+Ketentuan :
+1.	Service ini harus menggunakan Bearer Token JWT untuk mengaksesnya
+2.	Tidak ada parameter email di query param url ataupun request body, parameter email diambil dari payload JWT yang didapatkan dari hasil login
+3.	Format Image yang boleh di upload hanya jpeg dan png
+4.	Handling Response sesuai dokumentasi Response dibawah
+
+Request URL : https://take-home-test-api.nutech-integrasi.com/profile/image
+Request body : file string($binary)
+
+Server Response 
+
+Code : 401
+Description : Error: response status is 401
+Response body : {
+  "status": 108,
+  "message": "Token tidak tidak valid atau kadaluwarsa",
+  "data": null
+                }
+Response headers : 
+content-length: 79 
+ content-type: application/json; charset=utf-8
+Code : 200
+Description : Request Successfully
+Media type : application/json
+Response body : 
+  "status": 0,
+  "message": "Update Profile Image berhasil",
+  "data": {
+    "email": "user@nutech-integrasi.com",
+    "first_name": "User Edited",
+    "last_name": "Nutech Edited",
+    "profile_image": "https://yoururlapi.com/profile-updated.jpeg"
+  }
+}
+
+
+
+
+Code : 400
+Description : Bad Request
+Media type : application/json
+Response body : {
+  "status": 102,
+  "message": "Format Image tidak sesuai",
+  "data": null
+               }
+
+Code : 401
+Description : Unauthorired
+Media type : application/json
+Response body : {
+  "status": 108,
+  "message": "Token tidka valid atau kadaluwarsa",
+  "data": null
+               }
+
+
+2.	Module Information
+
+•	/banner (GET)
+API Banner Public (tidak memerlukan Token untuk mengaksesnya)
+Digunakan untuk mendapatkan list banner
+Ketentuan :
+1.	Buat data list banner sesuai dokumentasi Response dibawah, usahakan banner ini tidak di 
+               hardcode, melainkan ambil dari database
+2.	Tidak perlu membuatkan module CRUD banner
+3.	Handling Response sesuai dokumentasi Response dibawah
+
+Request URL : https://take-home-test-api.nutech-integrasi.com/banner
+
+Code : 200
+Description : Success
+Media type : application/json
+Respon Body : {
+  "status": 0,
+  "message": "Sukses",
+  "data": [
+    {
+      "banner_name": "Banner 1",
+      "banner_image": "https://minio.nutech-integrasi.com/take-home-test/banner/Banner-1.png",
+      "description": "Lerem Ipsum Dolor sit amet"
+    },
+    {
+      "banner_name": "Banner 2",
+      "banner_image": "https://minio.nutech-integrasi.com/take-home-test/banner/Banner-2.png",
+      "description": "Lerem Ipsum Dolor sit amet"
+    },
+    {
+      "banner_name": "Banner 3",
+      "banner_image": "https://minio.nutech-integrasi.com/take-home-test/banner/Banner-3.png",
+      "description": "Lerem Ipsum Dolor sit amet"
+    },
+    {
+      "banner_name": "Banner 4",
+      "banner_image": "https://minio.nutech-integrasi.com/take-home-test/banner/Banner-4.png",
+      "description": "Lerem Ipsum Dolor sit amet"
+    },
+    {
+      "banner_name": "Banner 5",
+      "banner_image": "https://minio.nutech-integrasi.com/take-home-test/banner/Banner-5.png",
+      "description": "Lerem Ipsum Dolor sit amet"
+    }
+  ]
+             }
+
+             Respon Headers : 
+content-length: 825 
+ content-type: application/json; charset=utf-8
+
+
+•	/services (GET)
+API Services Private (memerlukan Token untuk mengaksesnya)
+Digunakan untuk mendapatkan list Service/Layanan PPOB
+Ketentuan :
+1.	Buat data list Service/Layanan sesuai dokumentasi Response dibawah, usahakan data list Service atau Layanan ini tidak di hardcode, melainkan ambil dari database
+2.	Tidak perlu membuatkan module CRUD Service/Layanan
+3.	Handling Response sesuai dokumentasi Response dibawah
+
+Request URL : https://take-home-test-api.nutech-integrasi.com/services
+
+Code : 401
+Description : Error: resonse status is 401
+Media type : application/json
+Respon body : {
+  "status": 108,
+  "message": "Token tidak tidak valid atau kadaluwarsa",
+  "data": null
+}
+Response header : 
+content-length: 79 
+content-type: application/json; charset=utf-8
+
+Code : 200
+Description Request Successfuly
+Media type : application/json
+Respon  body : {
+  "status": 0,
+  "message": "Sukses",
+  "data": [
+    {
+      "service_code": "PAJAK",
+      "service_name": "Pajak PBB",
+      "service_icon": "https://nutech-integrasi.app/dummy.jpg",
+      "service_tariff": 40000
+    },
+    {
+      "service_code": "PLN",
+      "service_name": "Listrik",
+      "service_icon": "https://nutech-integrasi.app/dummy.jpg",
+      "service_tariff": 10000
+    },
+    {
+      "service_code": "PDAM",
+      "service_name": "PDAM Berlangganan",
+      "service_icon": "https://nutech-integrasi.app/dummy.jpg",
+      "service_tariff": 40000
+    },
+    {
+      "service_code": "PULSA",
+      "service_name": "Pulsa",
+      "service_icon": "https://nutech-integrasi.app/dummy.jpg",
+      "service_tariff": 40000
+    },
+    {
+      "service_code": "PGN",
+      "service_name": "PGN Berlangganan",
+      "service_icon": "https://nutech-integrasi.app/dummy.jpg",
+      "service_tariff": 50000
+    },
+    {
+      "service_code": "MUSIK",
+      "service_name": "Musik Berlangganan",
+      "service_icon": "https://nutech-integrasi.app/dummy.jpg",
+      "service_tariff": 50000
+    },
+    {
+      "service_code": "TV",
+      "service_name": "TV Berlangganan",
+      "service_icon": "https://nutech-integrasi.app/dummy.jpg",
+      "service_tariff": 50000
+    },
+    {
+      "service_code": "PAKET_DATA",
+      "service_name": "Paket data",
+      "service_icon": "https://nutech-integrasi.app/dummy.jpg",
+      "service_tariff": 50000
+    },
+    {
+      "service_code": "VOUCHER_GAME",
+      "service_name": "Voucher Game",
+      "service_icon": "https://nutech-integrasi.app/dummy.jpg",
+      "service_tariff": 100000
+    },
+    {
+      "service_code": "VOUCHER_MAKANAN",
+      "service_name": "Voucher Makanan",
+      "service_icon": "https://nutech-integrasi.app/dummy.jpg",
+      "service_tariff": 100000
+    },
+    {
+      "service_code": "QURBAN",
+      "service_name": "Qurban",
+      "service_icon": "https://nutech-integrasi.app/dummy.jpg",
+      "service_tariff": 200000
+    },
+    {
+      "service_code": "ZAKAT",
+      "service_name": "Zakat",
+      "service_icon": "https://nutech-integrasi.app/dummy.jpg",
+      "service_tariff": 300000
+    }
+  ]
+}
+
+
+
+4.	Module Transaction
+
+•	/balance (GET)
+API Balance Private (memerlukan Token untuk mengaksesnya)
+Digunakan untuk mendapatkan informasi balance / saldo terakhir dari User
+Ketentuan :
+1.	Service ini harus menggunakan Bearer Token JWT untuk mengaksesnya
+2.	Tidak ada parameter email di query param url ataupun request body, parameter email diambil dari payload JWT yang didapatkan dari hasil login
+3.	Handling Response sesuai dokumentasi Response dibawah
+
+Request URL : https://take-home-test-api.nutech-integrasi.com/balance
+
+Code : 401
+Description : Error : response status is 401
+Media type : application/json
+Respon body : {
+  "status": 108,
+  "message": "Token tidak tidak valid atau kadaluwarsa",
+  "data": null
+                        }
+	        Response header : 
+content-length: 79 
+content-type: application/json; charset=utf-8
+
+
+Code : 200
+Description : Get Balance / Saldo Berhasil
+Media type : application/json
+Respon body : {
+  "status": 0,
+  "message": "Get Balance Berhasil”,
+  "data": {
+       “balance”: 100000
+  }
+                        }
+	        Response header : 
+content-length: 79 
+content-type: application/json; charset=utf-8
+
+Code : 401
+Description : Unauthorized
+Media type : application/json
+Respon body : {
+  "status": 108,
+  "message": "Token tidak valid atau kadaluwarsa,
+  "data": {
+       “balance”: null
+  }
+                        }
+	        Response header : 
+content-length: 79 
+content-type: application/json; charset=utf-8
+
+•	/topup (POST)
+API Topup Private (memerlukan Token untuk mengaksesnya)
+Digunakan untuk melakukan top up balance / saldo dari User
+Ketentuan :
+-	Service ini harus menggunakan Bearer Token JWT untuk mengaksesnya
+-	idak ada parameter email di query param url ataupun request body, parameter email diambil dari payload JWT yang didapatkan dari hasil login
+-	Setiap kali melakukan Top Up maka balance / saldo dari User otomatis bertambah
+-	Parameter amount hanya boleh angka saja dan tidak boleh lebih kecil dari 0
+-	Pada saat Top Up set transaction_type di database menjadi TOPUP
+-	Handling Response sesuai dokumentasi Response dibawah
+
+Request URL : https://take-home-test-api.nutech-integrasi.com/topup
+Request body : {
+	“top_up_amount”: 100
+}
+
+Code : 401
+Description : Error response status is 401
+Media type : application/json
+Response body : {
+  "status": 108,
+  "message": "Token tidak tidak valid atau kadaluwarsa",
+  "data": null
+}
+Response header : 
+content-length: 79 
+              content-type: application/json; charset=utf-8
+
+Code : 200
+Description : Request Successfully
+Media type : application/json
+Response body : {
+  "status": 0,
+  "message": "Top Up Balance berhasil”
+  "data": {
+	“balance”: 20000
+}
+}
+Response header : 
+content-length: 79 
+              content-type: application/json; charset=utf-8
+
+Code : 400
+Description : Bad Request
+Media type : application/json
+Response body : {
+  "status": 102,
+  "message": "Parameter amount hanya boleh angka dan tidak boleh lebih kecil dari 0”
+  "data": null
+
+}
+Response header : 
+content-length: 79 
+              content-type: application/json; charset=utf-8
+
+
+
+•	/transaction (POST)
+API Transaction Private (memerlukan Token untuk mengaksesnya)
+Digunakan untuk melakukan transaksi dari services / layanan yang tersedia
+Ketentuan :
+-	Service ini harus menggunakan Bearer Token JWT untuk mengaksesnya
+-	Tidak ada parameter email di query param url ataupun request body, parameter email diambil dari payload JWT yang didapatkan dari hasil login
+-	Setiap kali melakukan Transaksi harus dipastikan balance / saldo mencukupi
+-	Pada saat Transaction set transaction_type di database menjadi PAYMENT
+- Handling Response sesuai dokumentasi Response dibawah
+- Response invoice_number untuk formatnya generate bebas
+
+
+Request URL : https://take-home-test-api.nutech-integrasi.com/transaction
+Request Body : {
+  "service_code": "PULSA"
+}
+
+
+Code : 401
+Description : Unauthorized
+Media type : application/json
+Respon body : {
+  "status": 108,
+  "message": "Token tidak valid atau kadaluwarsa",
+  "data": null
+                      }
+
+Code : 200
+Description : Transaksi Berhasil
+Media type : application/json
+Respon body : {
+  "status": 0,
+  "message": "Transaksi berhasil",
+  "data": {
+    "invoice_number": "INV17082023-001",
+    "service_code": "PLN_PRABAYAR",
+    "service_name": "PLN Prabayar",
+    "transaction_type": "PAYMENT",
+    "total_amount": 10000,
+    "created_on": "2023-08-17T10:10:10.000Z"
+  }
+}
+
+Code : 400
+Description : Bad Request
+Media type : application/json
+Respon body : {
+  "status": 102,
+  "message": "Service atau layanan tidak ditemukan",
+  "data": null
+                      }	
+
+•	/transaction/history (GET)
+API History Private (memerlukan Token untuk mengaksesnya)
+Digunakan untuk mendapatkan informasi history transaksi
+Ketentuan :
+1.	Service ini harus menggunakan Bearer Token JWT untuk mengaksesnya
+2.	Tidak ada parameter email di query param url ataupun request body, parameter email diambil dari payload JWT yang didapatkan dari hasil login
+3.	Terdapat parameter limit yang bersifat opsional, jika limit tidak dikirim maka tampilkan semua data
+4.	Data di order dari yang paling baru berdasarkan transaction date (created_on)
+5.	Handling Response sesuai dokumentasi Response dibawah
+
+
+Parameters : 
+Name : offset integer (query) 
+Description : 0
+Name : limit integer (query)
+Description : 3
+
+Request URL : https://take-home-test-api.nutech-integrasi.com/transaction/history?offset=0&limit=3
+
+Server response :
+Code : 401 
+Description : Error response status is 401
+Media type : application/json
+Respon body : {
+  "status": 108,
+  "message": "Token tidak tidak valid atau kadaluwarsa",
+  "data": null
+                      }
+	        
+                      Respon headers : 
+	        content-length: 79 
+ 	       content-type: application/json; charset=utf-8
+
+	       response : 
+
+Code : 200
+Description : Get history transaksi berhasil
+Media type : application/json
+Respon body : {
+  "status": 0,
+  "message": "Get History Berhasil",
+  "data": {
+    "offset": 0,
+    "limit": 3,
+    "records": [
+      {
+        "invoice_number": "INV17082023-001",
+        "transaction_type": "TOPUP",
+        "description": "Top Up balance",
+        "total_amount": 100000,
+        "created_on": "2023-08-17T10:10:10.000Z"
+      },
+      {
+        "invoice_number": "INV17082023-002",
+        "transaction_type": "PAYMENT",
+        "description": "PLN Pascabayar",
+        "total_amount": 10000,
+        "created_on": "2023-08-17T11:10:10.000Z"
+      },
+      {
+        "invoice_number": "INV17082023-003",
+        "transaction_type": "PAYMENT",
+        "description": "Pulsa Indosat",
+        "total_amount": 40000,
+        "created_on": "2023-08-17T12:10:10.000Z"
+      }
+    ]
+  }
+                    }
+	        
+
+
+
+
+
+                      
+
+
+
+
+
+
+
+
+
+
+
