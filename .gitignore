@@ -22,6 +22,9 @@ pids
 # Misc
 .DS_Store
 
-# docs
-.kontrak-api.txt
-.kontrak api sweager.docx
+# Documentation files
+*.txt
+*.doc
+*.docx
+*.pdf
+*.docs
